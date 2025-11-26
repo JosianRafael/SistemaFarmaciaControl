@@ -1,0 +1,2241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Empleados y Asistencia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; }
+        .glass-effect { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(148, 163, 184, 0.1); }
+        .sidebar-active { transform: translateX(0); }
+        .transition-all { transition: all 0.3s ease; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .scroll-smooth { scroll-behavior: smooth; }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3); }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3); }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .btn-warning:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3); }
+        .btn-info { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+        .btn-info:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3); }
+        .card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 12px; }
+        .input-field { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; }
+        .input-field:focus { background: rgba(15, 23, 42, 0.8); border-color: #3b82f6; }
+        .table-row:hover { background: rgba(59, 130, 246, 0.1); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 50; }
+        .modal.active { display: flex; animation: fadeIn 0.3s ease-in; }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+        .badge-info { background: rgba(6, 182, 212, 0.2); color: #67e8f9; }
+        .badge-purple { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .pin-input { width: 60px; height: 60px; font-size: 24px; text-align: center; margin: 0 8px; }
+        .user-info { background: rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 8px 12px; }
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-container">
+        <div class="card p-8 rounded-lg w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-2">HR System</h1>
+                <p class="text-slate-400">Sistema de Gestión Empresarial</p>
+            </div>
+
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-center mb-6">Ingresar al Sistema</h2>
+                <p class="text-slate-400 text-center mb-6">Ingresa tu código de 4 dígitos</p>
+                
+                <div class="flex justify-center mb-6">
+                    <input type="text" id="pin1" class="pin-input input-field" maxlength="1" oninput="moveToNext(1, event)">
+                    <input type="text" id="pin2" class="pin-input input-field" maxlength="1" oninput="moveToNext(2, event)">
+                    <input type="text" id="pin3" class="pin-input input-field" maxlength="1" oninput="moveToNext(3, event)">
+                    <input type="text" id="pin4" class="pin-input input-field" maxlength="1" oninput="moveToNext(4, event)">
+                </div>
+
+                <button onclick="login()" class="btn-primary text-white w-full py-3 rounded-lg font-semibold transition-all">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Ingresar
+                </button>
+            </div>
+
+            <div class="text-center text-slate-500 text-sm">
+                <p>Código de administrador: 8745</p>
+                <p class="mt-2">Los empleados usan su código personal asignado</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION -->
+    <div id="mainApp" class="hidden">
+        <div class="flex h-screen bg-slate-950">
+            <!-- SIDEBAR -->
+            <div id="sidebar" class="fixed left-0 top-0 h-screen w-64 glass-effect border-r border-slate-800 transform -translate-x-full md:translate-x-0 transition-all z-40">
+                <div class="p-6 border-b border-slate-800">
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">HR System</h1>
+                    <p class="text-slate-400 text-sm mt-1">Gestión empresarial</p>
+                </div>
+
+                <!-- User Info -->
+                <div id="userInfo" class="p-4 border-b border-slate-800">
+                    <!-- Se llena dinámicamente -->
+                </div>
+
+                <nav class="mt-4 space-y-2 px-4">
+                    <button onclick="showSection('dashboard')" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-blue-500/20 active bg-blue-500/20 text-blue-300">
+                        <i class="fas fa-chart-line mr-3"></i> Dashboard
+                    </button>
+                    <button id="btnEmpleados" onclick="showSection('empleados')" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-blue-500/20">
+                        <i class="fas fa-users mr-3"></i> Empleados
+                    </button>
+                    <button onclick="showSection('asistencia')" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-blue-500/20">
+                        <i class="fas fa-clock mr-3"></i> Control de Asistencia
+                    </button>
+                    <button onclick="showSection('ausencias')" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-blue-500/20">
+                        <i class="fas fa-door-open mr-3"></i> Control de Ausencias
+                    </button>
+                    <button onclick="showSection('acciones')" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-blue-500/20">
+                        <i class="fas fa-tasks mr-3"></i> Control de Acciones
+                    </button>
+                    <button id="btnHistorial" onclick="showSection('historial')" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-blue-500/20">
+                        <i class="fas fa-history mr-3"></i> Historial
+                    </button>
+                    <button id="btnReportes" onclick="showSection('reportes')" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-blue-500/20">
+                        <i class="fas fa-file-chart-line mr-3"></i> Reportes
+                    </button>
+                    <button onclick="logout()" class="nav-btn w-full text-left px-4 py-3 rounded-lg transition-all hover:bg-red-500/20 text-red-300 mt-8">
+                        <i class="fas fa-sign-out-alt mr-3"></i> Cerrar Sesión
+                    </button>
+                </nav>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div class="flex-1 md:ml-64 flex flex-col overflow-hidden">
+                <!-- HEADER -->
+                <header class="glass-effect border-b border-slate-800 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <button onclick="toggleSidebar()" class="md:hidden text-slate-300 hover:text-white">
+                                <i class="fas fa-bars text-xl"></i>
+                            </button>
+                            <h2 id="pageTitle" class="text-2xl font-bold">Dashboard</h2>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right">
+                                <p id="currentTime" class="text-sm font-mono text-blue-300">00:00:00</p>
+                                <p id="currentDate" class="text-xs text-slate-400"></p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- CONTENT AREA -->
+                <main class="flex-1 overflow-auto scroll-smooth">
+                    <div class="p-6 space-y-6">
+                        <!-- DASHBOARD SECTION -->
+                        <section id="dashboard-section" class="section-content fade-in">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <div class="card p-6 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-slate-400 text-sm">Total Empleados</p>
+                                            <p id="stat-total-empleados" class="text-3xl font-bold text-blue-400 mt-2">0</p>
+                                        </div>
+                                        <i class="fas fa-users text-4xl text-blue-500/20"></i>
+                                    </div>
+                                </div>
+                                <div class="card p-6 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-slate-400 text-sm">Presentes Hoy</p>
+                                            <p id="stat-presentes" class="text-3xl font-bold text-green-400 mt-2">0</p>
+                                        </div>
+                                        <i class="fas fa-check-circle text-4xl text-green-500/20"></i>
+                                    </div>
+                                </div>
+                                <div class="card p-6 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-slate-400 text-sm">Ausentes Hoy</p>
+                                            <p id="stat-ausentes" class="text-3xl font-bold text-red-400 mt-2">0</p>
+                                        </div>
+                                        <i class="fas fa-times-circle text-4xl text-red-500/20"></i>
+                                    </div>
+                                </div>
+                                <div class="card p-6 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-slate-400 text-sm">Tardanzas Hoy</p>
+                                            <p id="stat-tardanzas" class="text-3xl font-bold text-yellow-400 mt-2">0</p>
+                                        </div>
+                                        <i class="fas fa-exclamation-circle text-4xl text-yellow-500/20"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card p-6 rounded-lg">
+                                    <h3 class="text-lg font-bold mb-4 text-slate-200">Asistencias Recientes</h3>
+                                    <div id="dashboard-asistencias" class="space-y-3">
+                                        <p class="text-slate-500 text-center py-4">Sin asistencias registradas</p>
+                                    </div>
+                                </div>
+                                <div class="card p-6 rounded-lg">
+                                    <h3 class="text-lg font-bold mb-4 text-slate-200">Empleados Activos</h3>
+                                    <div id="dashboard-empleados" class="space-y-3">
+                                        <p class="text-slate-500 text-center py-4">Sin empleados registrados</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- EMPLEADOS SECTION -->
+                        <section id="empleados-section" class="section-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold">Gestión de Empleados</h3>
+                                <button onclick="openModal('modalEmpleado')" class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all">
+                                    <i class="fas fa-plus"></i> Nuevo Empleado
+                                </button>
+                            </div>
+
+                            <div class="card p-6 rounded-lg">
+                                <div class="mb-4 flex gap-4">
+                                    <input type="text" id="searchEmpleados" placeholder="Buscar por nombre o cédula..." class="input-field flex-1 px-4 py-2 rounded-lg text-white placeholder-slate-400">
+                                    <select id="filterEstado" class="input-field px-4 py-2 rounded-lg text-white">
+                                        <option value="">Todos los estados</option>
+                                        <option value="activo">Activo</option>
+                                        <option value="inactivo">Inactivo</option>
+                                    </select>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="border-b border-slate-700">
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Foto</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Nombre</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Cédula</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Correo</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Teléfono</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Rol</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Departamento</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Turno</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Código</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Estado</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="empleadosTable" class="divide-y divide-slate-700">
+                                            <tr class="text-slate-500 text-center">
+                                                <td colspan="11" class="py-8">Sin empleados registrados</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- ASISTENCIA SECTION -->
+                        <section id="asistencia-section" class="section-content hidden">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                <div class="lg:col-span-2">
+                                    <div class="card p-8 rounded-lg">
+                                        <h3 class="text-2xl font-bold mb-6 text-center">Registro de Asistencia</h3>
+                                        
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-semibold mb-2 text-slate-300">Seleccionar Empleado</label>
+                                            <select id="empleadoAsistencia" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
+                                                <option value="">-- Selecciona un empleado --</option>
+                                            </select>
+                                        </div>
+
+                                        <div id="empleadoInfo" class="hidden mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Nombre</p>
+                                                    <p id="infoNombre" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Turno</p>
+                                                    <p id="infoTurno" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Departamento</p>
+                                                    <p id="infoDepartamento" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Rol</p>
+                                                    <p id="infoRol" class="font-bold text-slate-200"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-semibold mb-2 text-slate-300">Hora Actual</label>
+                                            <input type="time" id="horaActual" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-4 mb-6">
+                                            <button onclick="registrarEntrada()" class="btn-success text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2">
+                                                <i class="fas fa-arrow-right-to-bracket"></i> Registrar Entrada
+                                            </button>
+                                            <button onclick="registrarSalida()" class="btn-danger text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2">
+                                                <i class="fas fa-arrow-right-from-bracket"></i> Registrar Salida
+                                            </button>
+                                        </div>
+
+                                        <div id="statusAsistencia" class="hidden p-4 rounded-lg text-center font-semibold text-white">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card p-6 rounded-lg h-fit">
+                                    <h3 class="text-lg font-bold mb-4">Asistencia de Hoy</h3>
+                                    <div id="asistenciaDelDia" class="space-y-3">
+                                        <p class="text-slate-500 text-center py-4">Selecciona un empleado</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- AUSENCIAS SECTION -->
+                        <section id="ausencias-section" class="section-content hidden">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                <div class="lg:col-span-2">
+                                    <div class="card p-8 rounded-lg">
+                                        <h3 class="text-2xl font-bold mb-6 text-center">Control de Ausencias</h3>
+                                        
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-semibold mb-2 text-slate-300">Seleccionar Empleado</label>
+                                            <select id="empleadoAusencia" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
+                                                <option value="">-- Selecciona un empleado --</option>
+                                            </select>
+                                        </div>
+
+                                        <div id="empleadoInfoAusencia" class="hidden mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Nombre</p>
+                                                    <p id="infoNombreAusencia" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Turno</p>
+                                                    <p id="infoTurnoAusencia" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Departamento</p>
+                                                    <p id="infoDepartamentoAusencia" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Rol</p>
+                                                    <p id="infoRolAusencia" class="font-bold text-slate-200"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-semibold mb-2 text-slate-300">Motivo de Ausencia</label>
+                                            <input type="text" id="motivoAusencia" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg" placeholder="Ej: Reunión externa, almuerzo, etc.">
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-4 mb-6">
+                                            <button onclick="registrarSalidaAusencia()" class="btn-warning text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2">
+                                                <i class="fas fa-door-open"></i> Registrar Salida
+                                            </button>
+                                            <button onclick="registrarRegresoAusencia()" class="btn-success text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2">
+                                                <i class="fas fa-door-closed"></i> Registrar Regreso
+                                            </button>
+                                        </div>
+
+                                        <div id="contadorAusencia" class="hidden mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-center">
+                                            <h4 class="text-lg font-bold text-yellow-300 mb-2">Tiempo Fuera</h4>
+                                            <div id="tiempoTranscurrido" class="text-3xl font-mono text-yellow-400">00:00:00</div>
+                                            <p class="text-sm text-yellow-300 mt-2" id="motivoAusenciaTexto"></p>
+                                        </div>
+
+                                        <div id="statusAusencia" class="hidden p-4 rounded-lg text-center font-semibold text-white">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card p-6 rounded-lg h-fit">
+                                    <h3 class="text-lg font-bold mb-4">Ausencias de Hoy</h3>
+                                    <div id="ausenciasDelDia" class="space-y-3">
+                                        <p class="text-slate-500 text-center py-4">Selecciona un empleado</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- ACCIONES SECTION -->
+                        <section id="acciones-section" class="section-content hidden">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                                <div class="lg:col-span-2">
+                                    <div class="card p-8 rounded-lg">
+                                        <h3 class="text-2xl font-bold mb-6 text-center">Registro de Acciones</h3>
+                                        
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-semibold mb-2 text-slate-300">Seleccionar Empleado</label>
+                                            <select id="empleadoAccion" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
+                                                <option value="">-- Selecciona un empleado --</option>
+                                            </select>
+                                        </div>
+
+                                        <div id="empleadoInfoAccion" class="hidden mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Nombre</p>
+                                                    <p id="infoNombreAccion" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Turno</p>
+                                                    <p id="infoTurnoAccion" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Departamento</p>
+                                                    <p id="infoDepartamentoAccion" class="font-bold text-slate-200"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-slate-400 text-sm">Rol</p>
+                                                    <p id="infoRolAccion" class="font-bold text-slate-200"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-semibold mb-2 text-slate-300">Acción Realizada</label>
+                                            <select id="tipoAccion" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg">
+                                                <option value="">-- Selecciona una acción --</option>
+                                                <option value="Limpieza">Limpieza</option>
+                                                <option value="Organización">Organización</option>
+                                                <option value="Atención al Cliente">Atención al Cliente</option>
+                                                <option value="Mantenimiento">Mantenimiento</option>
+                                                <option value="Reunión">Reunión</option>
+                                                <option value="Capacitación">Capacitación</option>
+                                                <option value="Inventario">Inventario</option>
+                                                <option value="Reporte">Reporte</option>
+                                                <option value="Supervisión">Supervisión</option>
+                                                <option value="Otro">Otro</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <label class="block text-sm font-semibold mb-2 text-slate-300">Observaciones (Opcional)</label>
+                                            <textarea id="observacionesAccion" class="input-field w-full px-4 py-3 rounded-lg text-white text-lg" placeholder="Detalles adicionales sobre la acción realizada..." rows="3"></textarea>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <button onclick="registrarAccion()" class="btn-info text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 w-full">
+                                                <i class="fas fa-save"></i> Registrar Acción
+                                            </button>
+                                        </div>
+
+                                        <div id="statusAccion" class="hidden p-4 rounded-lg text-center font-semibold text-white">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card p-6 rounded-lg h-fit">
+                                    <h3 class="text-lg font-bold mb-4">Acciones de Hoy</h3>
+                                    <div id="accionesDelDia" class="space-y-3">
+                                        <p class="text-slate-500 text-center py-4">Selecciona un empleado</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card p-6 rounded-lg">
+                                <h3 class="text-xl font-bold mb-4">Historial de Acciones</h3>
+                                <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-slate-300">Filtrar por Empleado</label>
+                                        <select id="historialAccionEmpleado" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                                            <option value="">Todos los empleados</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-slate-300">Filtrar por Acción</label>
+                                        <select id="historialTipoAccion" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                                            <option value="">Todas las acciones</option>
+                                            <option value="Limpieza">Limpieza</option>
+                                            <option value="Organización">Organización</option>
+                                            <option value="Atención al Cliente">Atención al Cliente</option>
+                                            <option value="Mantenimiento">Mantenimiento</option>
+                                            <option value="Reunión">Reunión</option>
+                                            <option value="Capacitación">Capacitación</option>
+                                            <option value="Inventario">Inventario</option>
+                                            <option value="Reporte">Reporte</option>
+                                            <option value="Supervisión">Supervisión</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-slate-300">Fecha</label>
+                                        <input type="date" id="historialFechaAccion" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                                    </div>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="border-b border-slate-700">
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Empleado</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Fecha y Hora</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Acción</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Observaciones</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historialAccionesTable" class="divide-y divide-slate-700">
+                                            <tr class="text-slate-500 text-center">
+                                                <td colspan="5" class="py-8">Sin registros de acciones</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- HISTORIAL SECTION -->
+                        <section id="historial-section" class="section-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold">Historial de Asistencia</h3>
+                            </div>
+
+                            <div class="card p-6 rounded-lg">
+                                <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-slate-300">Filtrar por Empleado</label>
+                                        <select id="historialEmpleado" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                                            <option value="">Todos los empleados</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-slate-300">Fecha Inicio</label>
+                                        <input type="date" id="historialFechaInicio" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-slate-300">Fecha Fin</label>
+                                        <input type="date" id="historialFechaFin" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                                    </div>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="border-b border-slate-700">
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Empleado</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Fecha</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Hora Entrada</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Hora Salida</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Turno</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Horas Trabajadas</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Tardanza</th>
+                                                <th class="text-left px-4 py-3 font-semibold text-slate-300">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historialTable" class="divide-y divide-slate-700">
+                                            <tr class="text-slate-500 text-center">
+                                                <td colspan="8" class="py-8">Sin registros de asistencia</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- REPORTES SECTION -->
+                        <section id="reportes-section" class="section-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold">Reportes de Asistencia</h3>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                <div class="card p-6 rounded-lg">
+                                    <label class="block text-sm font-semibold mb-2 text-slate-300">Empleado</label>
+                                    <select id="reporteEmpleado" class="input-field w-full px-4 py-2 rounded-lg text-white">
+                                        <option value="">Todos</option>
+                                    </select>
+                                </div>
+                                <div class="card p-6 rounded-lg">
+                                    <label class="block text-sm font-semibold mb-2 text-slate-300">Mes</label>
+                                    <input type="month" id="reporteMes" class="input-field w-full px-4 py-2 rounded-lg text-white" value="">
+                                </div>
+                                <div class="card p-6 rounded-lg flex flex-col justify-end">
+                                    <button onclick="generarReporte()" class="btn-primary text-white px-4 py-2 rounded-lg font-semibold transition-all">
+                                        <i class="fas fa-chart-bar mr-2"></i> Generar Reporte
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="reporteContenido" class="space-y-6">
+                                <p class="text-slate-400 text-center py-8">Selecciona criterios y genera un reporte</p>
+                            </div>
+                        </section>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO EMPLEADO -->
+    <div id="modalEmpleado" class="modal items-center justify-center">
+        <div class="bg-slate-900 rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-700">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold">Nuevo Empleado</h3>
+                <button onclick="closeModal('modalEmpleado')" class="text-slate-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="formEmpleado" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Nombre</label>
+                        <input type="text" id="empleadoNombre" class="input-field w-full px-4 py-2 rounded-lg text-white placeholder-slate-400" placeholder="Nombre completo" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Cédula</label>
+                        <input type="text" id="empleadoCedula" class="input-field w-full px-4 py-2 rounded-lg text-white placeholder-slate-400" placeholder="Cédula de identidad" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Correo</label>
+                        <input type="email" id="empleadoCorreo" class="input-field w-full px-4 py-2 rounded-lg text-white placeholder-slate-400" placeholder="correo@empresa.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Teléfono</label>
+                        <input type="tel" id="empleadoTelefono" class="input-field w-full px-4 py-2 rounded-lg text-white placeholder-slate-400" placeholder="+1234567890" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Rol</label>
+                        <select id="empleadoRol" class="input-field w-full px-4 py-2 rounded-lg text-white" required>
+                            <option value="">Selecciona un rol</option>
+                            <option value="Gerente">Gerente</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Empleado">Empleado</option>
+                            <option value="Asistente">Asistente</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Departamento</label>
+                        <select id="empleadoDepartamento" class="input-field w-full px-4 py-2 rounded-lg text-white" required>
+                            <option value="">Selecciona departamento</option>
+                            <option value="RRHH">RRHH</option>
+                            <option value="Ventas">Ventas</option>
+                            <option value="IT">IT</option>
+                            <option value="Finanzas">Finanzas</option>
+                            <option value="Operaciones">Operaciones</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Turno Personalizado</label>
+                        <div class="flex gap-2">
+                            <input type="time" id="turnoEntrada" class="input-field w-full px-4 py-2 rounded-lg text-white" required>
+                            <span class="flex items-center text-slate-400">a</span>
+                            <input type="time" id="turnoSalida" class="input-field w-full px-4 py-2 rounded-lg text-white" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Fecha de Ingreso</label>
+                        <input type="date" id="empleadoFechaIngreso" class="input-field w-full px-4 py-2 rounded-lg text-white" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-slate-300">Código de Acceso (4 dígitos)</label>
+                        <input type="text" id="empleadoCodigo" class="input-field w-full px-4 py-2 rounded-lg text-white placeholder-slate-400" placeholder="1234" maxlength="4" pattern="[0-9]{4}" required>
+                        <p class="text-xs text-slate-400 mt-1">Este código será usado para que el empleado ingrese al sistema</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-slate-300">Foto (opcional)</label>
+                    <input type="file" id="empleadoFoto" class="input-field w-full px-4 py-2 rounded-lg text-slate-300" accept="image/*">
+                    <div id="fotoPreview" class="mt-4 hidden">
+                        <img id="previewImg" src="/placeholder.svg" alt="Vista previa" class="max-h-32 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-6">
+                    <button type="submit" class="btn-primary text-white px-6 py-2 rounded-lg font-semibold transition-all flex-1">
+                        Guardar Empleado
+                    </button>
+                    <button type="button" onclick="closeModal('modalEmpleado')" class="bg-slate-700 text-white px-6 py-2 rounded-lg font-semibold transition-all flex-1 hover:bg-slate-600">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL VER PERFIL -->
+    <div id="modalPerfil" class="modal items-center justify-center">
+        <div class="bg-slate-900 rounded-lg p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-slate-700">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold">Perfil del Empleado</h3>
+                <button onclick="closeModal('modalPerfil')" class="text-slate-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div id="perfilContenido">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== SISTEMA DE AUTENTICACIÓN ====================
+        let currentUser = null;
+        const ADMIN_CODE = '8745';
+
+        // ==================== BASE DE DATOS (IndexedDB) ====================
+        class DatabaseManager {
+            constructor() {
+                this.db = null;
+                this.init();
+            }
+
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('SistemaAsistencia', 4);
+
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        console.log('[v4] IndexedDB inicializado correctamente');
+                        resolve();
+                    };
+
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+
+                        // Tabla de empleados
+                        if (!db.objectStoreNames.contains('empleados')) {
+                            const storeEmpleados = db.createObjectStore('empleados', { keyPath: 'id', autoIncrement: true });
+                            storeEmpleados.createIndex('cedula', 'cedula', { unique: false });
+                            storeEmpleados.createIndex('codigo', 'codigo', { unique: true });
+                        }
+
+                        // Tabla de asistencias (múltiples registros por empleado)
+                        if (!db.objectStoreNames.contains('asistencias')) {
+                            const storeAsistencias = db.createObjectStore('asistencias', { keyPath: 'id', autoIncrement: true });
+                            storeAsistencias.createIndex('empleadoId', 'empleadoId', { unique: false });
+                            storeAsistencias.createIndex('fecha', 'fecha', { unique: false });
+                        }
+
+                        // Tabla de ausencias (nueva tabla para salidas temporales)
+                        if (!db.objectStoreNames.contains('ausencias')) {
+                            const storeAusencias = db.createObjectStore('ausencias', { keyPath: 'id', autoIncrement: true });
+                            storeAusencias.createIndex('empleadoId', 'empleadoId', { unique: false });
+                            storeAusencias.createIndex('fecha', 'fecha', { unique: false });
+                        }
+
+                        // Tabla de acciones (nueva tabla para registro de acciones)
+                        if (!db.objectStoreNames.contains('acciones')) {
+                            const storeAcciones = db.createObjectStore('acciones', { keyPath: 'id', autoIncrement: true });
+                            storeAcciones.createIndex('empleadoId', 'empleadoId', { unique: false });
+                            storeAcciones.createIndex('fecha', 'fecha', { unique: false });
+                            storeAcciones.createIndex('tipo', 'tipo', { unique: false });
+                        }
+                    };
+                });
+            }
+
+            async guardarEmpleado(empleado) {
+                const store = this.db.transaction('empleados', 'readwrite').objectStore('empleados');
+                return new Promise((resolve, reject) => {
+                    const request = store.add(empleado);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async actualizarEmpleado(empleado) {
+                const store = this.db.transaction('empleados', 'readwrite').objectStore('empleados');
+                return new Promise((resolve, reject) => {
+                    const request = store.put(empleado);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerEmpleados() {
+                const store = this.db.transaction('empleados', 'readonly').objectStore('empleados');
+                return new Promise((resolve, reject) => {
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerEmpleado(id) {
+                const store = this.db.transaction('empleados', 'readonly').objectStore('empleados');
+                return new Promise((resolve, reject) => {
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerEmpleadoPorCodigo(codigo) {
+                const empleados = await this.obtenerEmpleados();
+                return empleados.find(e => e.codigo === codigo);
+            }
+
+            async eliminarEmpleado(id) {
+                const store = this.db.transaction('empleados', 'readwrite').objectStore('empleados');
+                return new Promise((resolve, reject) => {
+                    const request = store.delete(id);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async guardarAsistencia(asistencia) {
+                const store = this.db.transaction('asistencias', 'readwrite').objectStore('asistencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.add(asistencia);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async actualizarAsistencia(asistencia) {
+                const store = this.db.transaction('asistencias', 'readwrite').objectStore('asistencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.put(asistencia);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerAsistencias() {
+                const store = this.db.transaction('asistencias', 'readonly').objectStore('asistencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerAsistenciasDelDia(empleadoId) {
+                const hoy = new Date().toISOString().split('T')[0];
+                const asistencias = await this.obtenerAsistencias();
+                return asistencias.filter(a => a.empleadoId === empleadoId && a.fecha === hoy);
+            }
+
+            async obtenerAsistenciasEmpleado(empleadoId) {
+                const asistencias = await this.obtenerAsistencias();
+                return asistencias.filter(a => a.empleadoId === empleadoId).sort((a, b) => new Date(b.horaEntrada) - new Date(a.horaEntrada));
+            }
+
+            async eliminarAsistencia(id) {
+                const store = this.db.transaction('asistencias', 'readwrite').objectStore('asistencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.delete(id);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // ==================== MÉTODOS PARA AUSENCIAS ====================
+            async guardarAusencia(ausencia) {
+                const store = this.db.transaction('ausencias', 'readwrite').objectStore('ausencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.add(ausencia);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async actualizarAusencia(ausencia) {
+                const store = this.db.transaction('ausencias', 'readwrite').objectStore('ausencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.put(ausencia);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerAusencias() {
+                const store = this.db.transaction('ausencias', 'readonly').objectStore('ausencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerAusenciasDelDia(empleadoId) {
+                const hoy = new Date().toISOString().split('T')[0];
+                const ausencias = await this.obtenerAusencias();
+                return ausencias.filter(a => a.empleadoId === empleadoId && a.fecha === hoy);
+            }
+
+            async obtenerAusenciaActiva(empleadoId) {
+                const hoy = new Date().toISOString().split('T')[0];
+                const ausencias = await this.obtenerAusencias();
+                return ausencias.find(a => a.empleadoId === empleadoId && a.fecha === hoy && !a.horaRegreso);
+            }
+
+            async eliminarAusencia(id) {
+                const store = this.db.transaction('ausencias', 'readwrite').objectStore('ausencias');
+                return new Promise((resolve, reject) => {
+                    const request = store.delete(id);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // ==================== MÉTODOS PARA ACCIONES ====================
+            async guardarAccion(accion) {
+                const store = this.db.transaction('acciones', 'readwrite').objectStore('acciones');
+                return new Promise((resolve, reject) => {
+                    const request = store.add(accion);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerAcciones() {
+                const store = this.db.transaction('acciones', 'readonly').objectStore('acciones');
+                return new Promise((resolve, reject) => {
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async obtenerAccionesDelDia(empleadoId) {
+                const hoy = new Date().toISOString().split('T')[0];
+                const acciones = await this.obtenerAcciones();
+                return acciones.filter(a => a.empleadoId === empleadoId && a.fecha === hoy);
+            }
+
+            async obtenerAccionesEmpleado(empleadoId) {
+                const acciones = await this.obtenerAcciones();
+                return acciones.filter(a => a.empleadoId === empleadoId).sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
+            }
+
+            async eliminarAccion(id) {
+                const store = this.db.transaction('acciones', 'readwrite').objectStore('acciones');
+                return new Promise((resolve, reject) => {
+                    const request = store.delete(id);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+        }
+
+        const db = new DatabaseManager();
+
+        // ==================== FUNCIONES DE LOGIN ====================
+        function moveToNext(current, event) {
+            const input = event.target;
+            const value = input.value;
+            
+            if (value && current < 4) {
+                document.getElementById(`pin${current + 1}`).focus();
+            }
+            
+            // Permitir borrar con Backspace
+            if (event.inputType === 'deleteContentBackward' && current > 1) {
+                document.getElementById(`pin${current - 1}`).focus();
+            }
+        }
+
+        async function login() {
+            const pin1 = document.getElementById('pin1').value;
+            const pin2 = document.getElementById('pin2').value;
+            const pin3 = document.getElementById('pin3').value;
+            const pin4 = document.getElementById('pin4').value;
+            
+            const codigo = pin1 + pin2 + pin3 + pin4;
+            
+            if (codigo.length !== 4) {
+                showNotification('Ingresa un código de 4 dígitos', 'error');
+                return;
+            }
+            
+            // Verificar si es el administrador
+            if (codigo === ADMIN_CODE) {
+                currentUser = {
+                    tipo: 'admin',
+                    nombre: 'Administrador',
+                    codigo: ADMIN_CODE
+                };
+                showMainApp();
+                showNotification('Bienvenido Administrador', 'success');
+                return;
+            }
+            
+            // Buscar empleado con ese código
+            const empleado = await db.obtenerEmpleadoPorCodigo(codigo);
+            if (empleado && empleado.estado === 'activo') {
+                currentUser = {
+                    tipo: 'empleado',
+                    id: empleado.id,
+                    nombre: empleado.nombre,
+                    codigo: empleado.codigo,
+                    departamento: empleado.departamento,
+                    rol: empleado.rol
+                };
+                showMainApp();
+                showNotification(`Bienvenido ${empleado.nombre}`, 'success');
+            } else {
+                showNotification('Código inválido o empleado inactivo', 'error');
+                // Limpiar campos
+                document.getElementById('pin1').value = '';
+                document.getElementById('pin2').value = '';
+                document.getElementById('pin3').value = '';
+                document.getElementById('pin4').value = '';
+                document.getElementById('pin1').focus();
+            }
+        }
+
+        function showMainApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            updateUIForUser();
+            actualizarDashboard();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            
+            // Limpiar campos de PIN
+            document.getElementById('pin1').value = '';
+            document.getElementById('pin2').value = '';
+            document.getElementById('pin3').value = '';
+            document.getElementById('pin4').value = '';
+            document.getElementById('pin1').focus();
+            
+            // Resetear a dashboard
+            showSection('dashboard');
+        }
+
+        function updateUIForUser() {
+            const userInfo = document.getElementById('userInfo');
+            const isAdmin = currentUser.tipo === 'admin';
+            
+            // Actualizar información del usuario
+            userInfo.innerHTML = `
+                <div class="user-info">
+                    <p class="font-semibold text-sm">${currentUser.nombre}</p>
+                    <p class="text-xs text-slate-400">${isAdmin ? 'Administrador' : currentUser.rol}</p>
+                    <p class="text-xs text-slate-400">Código: ${currentUser.codigo}</p>
+                </div>
+            `;
+            
+            // Mostrar/ocultar elementos según permisos
+            document.getElementById('btnEmpleados').classList.toggle('hidden', !isAdmin);
+            document.getElementById('btnHistorial').classList.toggle('hidden', !isAdmin);
+            document.getElementById('btnReportes').classList.toggle('hidden', !isAdmin);
+            
+            // Si no es admin, forzar dashboard
+            if (!isAdmin) {
+                showSection('dashboard');
+            }
+        }
+
+        function checkAdminAccess() {
+            if (currentUser.tipo !== 'admin') {
+                showNotification('Acceso denegado. Solo para administradores.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function checkEditAccess() {
+            if (currentUser.tipo !== 'admin') {
+                showNotification('Acceso denegado. No tienes permisos para esta acción.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // ==================== UTILIDADES ====================
+        function formatearHora(fecha) {
+            const date = new Date(fecha);
+            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function formatearFecha(fecha) {
+            const date = new Date(fecha);
+            return date.toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatearFechaHora(fecha) {
+            const date = new Date(fecha);
+            return date.toLocaleString('es-ES', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+        }
+
+        function extraerHora(horaString) {
+            const [hora, minutos] = horaString.split(':').map(Number);
+            return hora * 60 + minutos; // Convertir a minutos
+        }
+
+        function calcularTardanza(horaEntrada, turno) {
+            const [horaInicio] = turno.split('-')[0].split(':').map(Number);
+            const [horaEntradaNum] = horaEntrada.split(':').map(Number);
+            
+            const minutosInicio = horaInicio * 60;
+            const minutosEntrada = horaEntradaNum * 60 + parseInt(horaEntrada.split(':')[1]);
+
+            const tardanza = minutosEntrada - minutosInicio;
+            return tardanza > 0 ? tardanza : 0;
+        }
+
+        function calcularHorasTrabajadas(entrada, salida) {
+            if (!entrada || !salida) return null;
+            const dateEntrada = new Date(entrada);
+            const dateSalida = new Date(salida);
+            const diff = (dateSalida - dateEntrada) / (1000 * 60 * 60);
+            return diff.toFixed(2);
+        }
+
+        function calcularTiempoAusencia(salida, regreso) {
+            if (!salida || !regreso) return null;
+            const dateSalida = new Date(salida);
+            const dateRegreso = new Date(regreso);
+            const diff = (dateRegreso - dateSalida) / (1000 * 60); // diferencia en minutos
+            return diff;
+        }
+
+        function formatearTiempo(minutos) {
+            const horas = Math.floor(minutos / 60);
+            const mins = Math.floor(minutos % 60);
+            const segs = Math.floor((minutos * 60) % 60);
+            return `${horas.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+        }
+
+        function openModal(modalId) {
+            if (modalId === 'modalEmpleado' && !checkAdminAccess()) return;
+            
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function showSection(section) {
+            // Verificar permisos para secciones restringidas
+            if (['empleados', 'historial', 'reportes'].includes(section) && !checkAdminAccess()) {
+                return;
+            }
+            
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+            
+            // Mostrar la sección seleccionada
+            document.getElementById(`${section}-section`).classList.remove('hidden');
+
+            // Actualizar título
+            const titulos = {
+                'dashboard': 'Dashboard',
+                'empleados': 'Gestión de Empleados',
+                'asistencia': 'Control de Asistencia',
+                'ausencias': 'Control de Ausencias',
+                'acciones': 'Control de Acciones',
+                'historial': 'Historial de Asistencia',
+                'reportes': 'Reportes'
+            };
+            document.getElementById('pageTitle').textContent = titulos[section];
+
+            // Actualizar botones de navegación
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'bg-blue-500/20', 'text-blue-300'));
+            event.target.closest('.nav-btn').classList.add('active', 'bg-blue-500/20', 'text-blue-300');
+
+            if (section === 'empleados') cargarEmpleados();
+            if (section === 'asistencia') cargarAsistencia();
+            if (section === 'ausencias') cargarAusencias();
+            if (section === 'acciones') cargarAcciones();
+            if (section === 'historial') cargarHistorial();
+            if (section === 'reportes') cargarReportes();
+            closeSidebar();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-active');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('sidebar-active');
+        }
+
+        // ==================== RELOJ DIGITAL ====================
+        function actualizarReloj() {
+            const ahora = new Date();
+            document.getElementById('currentTime').textContent = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('currentDate').textContent = ahora.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('horaActual').value = ahora.toTimeString().slice(0, 5);
+        }
+        setInterval(actualizarReloj, 1000);
+        actualizarReloj();
+
+        // ==================== GESTIÓN DE EMPLEADOS ====================
+        document.getElementById('formEmpleado').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!checkAdminAccess()) return;
+
+            const foto = await new Promise((resolve) => {
+                const fileInput = document.getElementById('empleadoFoto');
+                if (fileInput.files.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(fileInput.files[0]);
+                } else {
+                    resolve(null);
+                }
+            });
+
+            const entrada = document.getElementById('turnoEntrada').value;
+            const salida = document.getElementById('turnoSalida').value;
+            const turno = `${entrada}-${salida}`;
+            const codigo = document.getElementById('empleadoCodigo').value;
+
+            // Verificar que el código sea único
+            const empleadoExistente = await db.obtenerEmpleadoPorCodigo(codigo);
+            if (empleadoExistente) {
+                showNotification('El código ya está en uso por otro empleado', 'error');
+                return;
+            }
+
+            const empleado = {
+                nombre: document.getElementById('empleadoNombre').value,
+                cedula: document.getElementById('empleadoCedula').value,
+                correo: document.getElementById('empleadoCorreo').value,
+                telefono: document.getElementById('empleadoTelefono').value,
+                rol: document.getElementById('empleadoRol').value,
+                departamento: document.getElementById('empleadoDepartamento').value,
+                turno: turno,
+                codigo: codigo,
+                fechaIngreso: document.getElementById('empleadoFechaIngreso').value,
+                foto: foto,
+                estado: 'activo',
+                fechaCreacion: new Date().toISOString()
+            };
+
+            await db.guardarEmpleado(empleado);
+            closeModal('modalEmpleado');
+            document.getElementById('formEmpleado').reset();
+            document.getElementById('fotoPreview').classList.add('hidden');
+            cargarEmpleados();
+            actualizarDashboard();
+            cargarAsistencia();
+            cargarAusencias();
+            cargarAcciones();
+            showNotification('Empleado registrado exitosamente', 'success');
+        });
+
+        document.getElementById('empleadoFoto').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    document.getElementById('previewImg').src = reader.result;
+                    document.getElementById('fotoPreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function cargarEmpleados() {
+            if (!checkAdminAccess()) return;
+
+            const empleados = await db.obtenerEmpleados();
+            const tabla = document.getElementById('empleadosTable');
+            const searchTerm = document.getElementById('searchEmpleados').value.toLowerCase();
+            const filterEstado = document.getElementById('filterEstado').value;
+
+            let filtrados = empleados.filter(e => {
+                const matchSearch = e.nombre.toLowerCase().includes(searchTerm) || e.cedula.toLowerCase().includes(searchTerm);
+                const matchEstado = !filterEstado || e.estado === filterEstado;
+                return matchSearch && matchEstado;
+            });
+
+            if (filtrados.length === 0) {
+                tabla.innerHTML = '<tr class="text-slate-500 text-center"><td colspan="11" class="py-8">Sin empleados registrados</td></tr>';
+                return;
+            }
+
+            tabla.innerHTML = filtrados.map(e => `
+                <tr class="table-row hover:bg-slate-800 transition-colors">
+                    <td class="px-4 py-3">
+                        ${e.foto ? `<img src="${e.foto}" alt="${e.nombre}" class="w-10 h-10 rounded-full">` : `<div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center"><i class="fas fa-user text-blue-400"></i></div>`}
+                    </td>
+                    <td class="px-4 py-3 font-semibold">${e.nombre}</td>
+                    <td class="px-4 py-3 font-mono text-sm">${e.cedula}</td>
+                    <td class="px-4 py-3 text-sm">${e.correo}</td>
+                    <td class="px-4 py-3">${e.telefono}</td>
+                    <td class="px-4 py-3 text-sm"><span class="px-2 py-1 rounded-full bg-blue-500/20 text-blue-300">${e.rol}</span></td>
+                    <td class="px-4 py-3 text-sm">${e.departamento}</td>
+                    <td class="px-4 py-3 text-sm"><span class="px-2 py-1 rounded-full bg-purple-500/20 text-purple-300">${e.turno}</span></td>
+                    <td class="px-4 py-3 font-mono text-sm"><span class="px-2 py-1 rounded-full bg-green-500/20 text-green-300">${e.codigo}</span></td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-sm ${e.estado === 'activo' ? 'badge-success' : 'badge-danger'}">
+                            ${e.estado === 'activo' ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                            <button onclick="verPerfil(${e.id})" class="text-blue-400 hover:text-blue-300 text-sm" title="Ver perfil">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editarEmpleado(${e.id})" class="text-yellow-400 hover:text-yellow-300 text-sm" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="cambiarEstado(${e.id})" class="text-purple-400 hover:text-purple-300 text-sm" title="Cambiar estado">
+                                <i class="fas fa-toggle-on"></i>
+                            </button>
+                            <button onclick="eliminarEmpleado(${e.id})" class="text-red-400 hover:text-red-300 text-sm" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function verPerfil(empleadoId) {
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            const asistencias = await db.obtenerAsistenciasEmpleado(empleadoId);
+
+            const ultimosRegistros = asistencias.slice(0, 10);
+            const diasTrabajados = new Set(asistencias.map(a => a.fecha)).size;
+            const tardanzas = asistencias.filter(a => a.minutosTarde > 0).length;
+
+            const contenido = document.getElementById('perfilContenido');
+            contenido.innerHTML = `
+                <div class="mb-6 flex items-start gap-6">
+                    <div>
+                        ${empleado.foto ? `<img src="${empleado.foto}" alt="${empleado.nombre}" class="w-24 h-24 rounded-lg">` : `<div class="w-24 h-24 rounded-lg bg-blue-500/20 flex items-center justify-center"><i class="fas fa-user text-4xl text-blue-400"></i></div>`}
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-2xl font-bold mb-4">${empleado.nombre}</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-slate-400 text-sm">Cédula</p>
+                                <p class="font-mono font-bold">${empleado.cedula}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-sm">Correo</p>
+                                <p class="text-sm">${empleado.correo}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-sm">Teléfono</p>
+                                <p class="font-bold">${empleado.telefono}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-sm">Rol</p>
+                                <p class="font-bold">${empleado.rol}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-sm">Departamento</p>
+                                <p class="font-bold">${empleado.departamento}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-sm">Turno</p>
+                                <p class="font-bold text-purple-300">${empleado.turno}</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-sm">Código</p>
+                                <p class="font-mono font-bold text-green-300">${empleado.codigo}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="card p-4 rounded-lg text-center">
+                        <p class="text-slate-400 text-sm">Días Trabajados</p>
+                        <p class="text-2xl font-bold text-green-400 mt-2">${diasTrabajados}</p>
+                    </div>
+                    <div class="card p-4 rounded-lg text-center">
+                        <p class="text-slate-400 text-sm">Tardanzas</p>
+                        <p class="text-2xl font-bold text-yellow-400 mt-2">${tardanzas}</p>
+                    </div>
+                    <div class="card p-4 rounded-lg text-center">
+                        <p class="text-slate-400 text-sm">Registros</p>
+                        <p class="text-2xl font-bold text-blue-400 mt-2">${asistencias.length}</p>
+                    </div>
+                </div>
+
+                <h5 class="font-bold mb-3 text-lg">Últimas Asistencias</h5>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-700">
+                                <th class="text-left px-3 py-2 font-semibold text-slate-300">Fecha</th>
+                                <th class="text-left px-3 py-2 font-semibold text-slate-300">Entrada</th>
+                                <th class="text-left px-3 py-2 font-semibold text-slate-300">Salida</th>
+                                <th class="text-left px-3 py-2 font-semibold text-slate-300">Horas</th>
+                                <th class="text-left px-3 py-2 font-semibold text-slate-300">Tardanza</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700">
+                            ${ultimosRegistros.length > 0 ? ultimosRegistros.map(a => `
+                                <tr class="hover:bg-slate-800 transition-colors">
+                                    <td class="px-3 py-2">${formatearFecha(a.horaEntrada)}</td>
+                                    <td class="px-3 py-2 font-mono text-green-400">${formatearHora(a.horaEntrada)}</td>
+                                    <td class="px-3 py-2 font-mono ${a.horaSalida ? 'text-red-400' : 'text-slate-500'}">${a.horaSalida ? formatearHora(a.horaSalida) : '(Pendiente)'}</td>
+                                    <td class="px-3 py-2">${a.horasTrabajadas ? a.horasTrabajadas + ' h' : '-'}</td>
+                                    <td class="px-3 py-2">
+                                        ${a.minutosTarde > 0 ? `<span class="badge-warning px-2 py-1 rounded text-xs font-bold">${a.minutosTarde} min</span>` : '<span class="text-slate-500">-</span>'}
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="5" class="px-3 py-4 text-center text-slate-500">Sin registros de asistencia</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            openModal('modalPerfil');
+        }
+
+        async function cambiarEstado(empleadoId) {
+            if (!checkEditAccess()) return;
+
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            empleado.estado = empleado.estado === 'activo' ? 'inactivo' : 'activo';
+            await db.actualizarEmpleado(empleado);
+            cargarEmpleados();
+            showNotification(`Estado actualizado a ${empleado.estado}`, 'success');
+        }
+
+        async function eliminarEmpleado(empleadoId) {
+            if (!checkEditAccess()) return;
+
+            if (confirm('¿Estás seguro de que deseas eliminar este empleado?')) {
+                await db.eliminarEmpleado(empleadoId);
+                cargarEmpleados();
+                actualizarDashboard();
+                showNotification('Empleado eliminado', 'success');
+            }
+        }
+
+        document.getElementById('searchEmpleados').addEventListener('keyup', cargarEmpleados);
+        document.getElementById('filterEstado').addEventListener('change', cargarEmpleados);
+
+        // ==================== CONTROL DE ASISTENCIA ====================
+        async function cargarAsistencia() {
+            const empleados = await db.obtenerEmpleados();
+            const select = document.getElementById('empleadoAsistencia');
+            select.innerHTML = '<option value="">-- Selecciona un empleado --</option>' + empleados.filter(e => e.estado === 'activo').map(e => `
+                <option value="${e.id}">${e.nombre} - ${e.cedula}</option>
+            `).join('');
+        }
+
+        document.getElementById('empleadoAsistencia').addEventListener('change', async (e) => {
+            const empleadoId = parseInt(e.target.value);
+            if (!empleadoId) {
+                document.getElementById('empleadoInfo').classList.add('hidden');
+                document.getElementById('asistenciaDelDia').innerHTML = '<p class="text-slate-500 text-center py-4">Selecciona un empleado</p>';
+                return;
+            }
+
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            document.getElementById('infoNombre').textContent = empleado.nombre;
+            document.getElementById('infoTurno').textContent = empleado.turno;
+            document.getElementById('infoDepartamento').textContent = empleado.departamento;
+            document.getElementById('infoRol').textContent = empleado.rol;
+            document.getElementById('empleadoInfo').classList.remove('hidden');
+
+            actualizarAsistenciaDelDia(empleadoId);
+        });
+
+        async function actualizarAsistenciaDelDia(empleadoId) {
+            const asistencias = await db.obtenerAsistenciasDelDia(empleadoId);
+            const contenedor = document.getElementById('asistenciaDelDia');
+
+            if (asistencias.length === 0) {
+                contenedor.innerHTML = '<p class="text-slate-500 text-center py-4">Sin registros de hoy</p>';
+                return;
+            }
+
+            const canDelete = currentUser.tipo === 'admin';
+
+            contenedor.innerHTML = asistencias.map(a => `
+                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-xs text-slate-400">Entrada: <span class="text-green-400 font-mono font-bold">${formatearHora(a.horaEntrada)}</span></p>
+                            ${a.horaSalida ? `<p class="text-xs text-slate-400 mt-1">Salida: <span class="text-red-400 font-mono font-bold">${formatearHora(a.horaSalida)}</span></p>` : ''}
+                            <p class="text-xs text-slate-400 mt-1">Turno: <span class="text-purple-300 font-bold">${a.turno}</span></p>
+                        </div>
+                        ${canDelete ? `
+                            <button onclick="eliminarAsistencia(${a.id})" class="text-red-400 hover:text-red-300 text-xs">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    ${a.minutosTarde > 0 ? `<div class="bg-yellow-500/20 border border-yellow-500/30 rounded px-2 py-1"><p class="text-xs text-yellow-300 font-bold">⚠️ Tardanza: ${a.minutosTarde} minutos</p></div>` : ''}
+                    ${a.horasTrabajadas ? `<p class="text-xs text-blue-300 mt-2">Horas trabajadas: <span class="font-bold">${a.horasTrabajadas} h</span></p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function registrarEntrada() {
+            const empleadoId = parseInt(document.getElementById('empleadoAsistencia').value);
+            const horaStr = document.getElementById('horaActual').value;
+
+            if (!empleadoId) {
+                showNotification('Selecciona un empleado', 'error');
+                return;
+            }
+            if (!horaStr) {
+                showNotification('La hora se actualiza automáticamente', 'error');
+                return;
+            }
+
+            registrarAsistencia(empleadoId, horaStr, 'entrada');
+        }
+
+        function registrarSalida() {
+            const empleadoId = parseInt(document.getElementById('empleadoAsistencia').value);
+            const horaStr = document.getElementById('horaActual').value;
+
+            if (!empleadoId) {
+                showNotification('Selecciona un empleado', 'error');
+                return;
+            }
+            if (!horaStr) {
+                showNotification('La hora se actualiza automáticamente', 'error');
+                return;
+            }
+
+            registrarAsistencia(empleadoId, horaStr, 'salida');
+        }
+
+        async function registrarAsistencia(empleadoId, horaStr, tipo) {
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            const ahora = new Date();
+            const [hora, minutos] = horaStr.split(':').map(Number);
+            const horaCompleta = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), hora, minutos, 0);
+            const hoy = ahora.toISOString().split('T')[0];
+
+            if (tipo === 'entrada') {
+                // Calcular tardanza
+                const tardanza = calcularTardanza(horaStr, empleado.turno);
+                
+                const asistencia = {
+                    empleadoId: empleadoId,
+                    empleadoNombre: empleado.nombre,
+                    empleadoCedula: empleado.cedula,
+                    horaEntrada: horaCompleta.toISOString(),
+                    horaSalida: null,
+                    horasTrabajadas: null,
+                    fecha: hoy,
+                    turno: empleado.turno,
+                    minutosTarde: tardanza,
+                    departamento: empleado.departamento,
+                    fechaCreacion: new Date().toISOString()
+                };
+
+                await db.guardarAsistencia(asistencia);
+                const status = document.getElementById('statusAsistencia');
+                status.className = 'p-4 rounded-lg text-center font-semibold text-white bg-green-500/30 border border-green-500';
+                status.innerHTML = `<i class="fas fa-check-circle mr-2"></i>✅ Entrada registrada a las ${horaStr}${tardanza > 0 ? ` ⚠️ (${tardanza} min tarde)` : ''}`;
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 3000);
+
+                showNotification(`Entrada registrada${tardanza > 0 ? ` - ${tardanza} min de tardanza` : ''}`, 'success');
+            } else if (tipo === 'salida') {
+                // Buscar la última asistencia sin salida del empleado hoy
+                const asistenciasDia = await db.obtenerAsistenciasDelDia(empleadoId);
+                const asistenciaActiva = asistenciasDia.find(a => !a.horaSalida);
+
+                if (!asistenciaActiva) {
+                    showNotification('No hay una entrada sin cierre registrada', 'error');
+                    return;
+                }
+
+                asistenciaActiva.horaSalida = horaCompleta.toISOString();
+                asistenciaActiva.horasTrabajadas = calcularHorasTrabajadas(asistenciaActiva.horaEntrada, asistenciaActiva.horaSalida);
+
+                await db.actualizarAsistencia(asistenciaActiva);
+                const status = document.getElementById('statusAsistencia');
+                status.className = 'p-4 rounded-lg text-center font-semibold text-white bg-blue-500/30 border border-blue-500';
+                status.innerHTML = `<i class="fas fa-sign-out-alt mr-2"></i>✅ Salida registrada a las ${horaStr} - Horas trabajadas: ${asistenciaActiva.horasTrabajadas}h`;
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 3000);
+
+                showNotification(`Salida registrada - ${asistenciaActiva.horasTrabajadas} horas trabajadas`, 'success');
+            }
+
+            actualizarAsistenciaDelDia(empleadoId);
+            actualizarDashboard();
+            cargarHistorial();
+        }
+
+        async function eliminarAsistencia(asistenciaId) {
+            if (!checkEditAccess()) return;
+
+            if (confirm('¿Eliminar este registro de asistencia?')) {
+                await db.eliminarAsistencia(asistenciaId);
+                const empleadoId = parseInt(document.getElementById('empleadoAsistencia').value);
+                actualizarAsistenciaDelDia(empleadoId);
+                actualizarDashboard();
+                showNotification('Registro eliminado', 'success');
+            }
+        }
+
+        // ==================== CONTROL DE AUSENCIAS ====================
+        let contadorInterval;
+        let tiempoInicioAusencia;
+
+        async function cargarAusencias() {
+            const empleados = await db.obtenerEmpleados();
+            const select = document.getElementById('empleadoAusencia');
+            select.innerHTML = '<option value="">-- Selecciona un empleado --</option>' + empleados.filter(e => e.estado === 'activo').map(e => `
+                <option value="${e.id}">${e.nombre} - ${e.cedula}</option>
+            `).join('');
+        }
+
+        document.getElementById('empleadoAusencia').addEventListener('change', async (e) => {
+            const empleadoId = parseInt(e.target.value);
+            if (!empleadoId) {
+                document.getElementById('empleadoInfoAusencia').classList.add('hidden');
+                document.getElementById('ausenciasDelDia').innerHTML = '<p class="text-slate-500 text-center py-4">Selecciona un empleado</p>';
+                return;
+            }
+
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            document.getElementById('infoNombreAusencia').textContent = empleado.nombre;
+            document.getElementById('infoTurnoAusencia').textContent = empleado.turno;
+            document.getElementById('infoDepartamentoAusencia').textContent = empleado.departamento;
+            document.getElementById('infoRolAusencia').textContent = empleado.rol;
+            document.getElementById('empleadoInfoAusencia').classList.remove('hidden');
+
+            actualizarAusenciasDelDia(empleadoId);
+        });
+
+        async function actualizarAusenciasDelDia(empleadoId) {
+            const ausencias = await db.obtenerAusenciasDelDia(empleadoId);
+            const contenedor = document.getElementById('ausenciasDelDia');
+
+            if (ausencias.length === 0) {
+                contenedor.innerHTML = '<p class="text-slate-500 text-center py-4">Sin ausencias registradas hoy</p>';
+                return;
+            }
+
+            const canDelete = currentUser.tipo === 'admin';
+
+            contenedor.innerHTML = ausencias.map(a => `
+                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-xs text-slate-400">Salida: <span class="text-yellow-400 font-mono font-bold">${formatearHora(a.horaSalida)}</span></p>
+                            ${a.horaRegreso ? `<p class="text-xs text-slate-400 mt-1">Regreso: <span class="text-green-400 font-mono font-bold">${formatearHora(a.horaRegreso)}</span></p>` : ''}
+                            <p class="text-xs text-slate-400 mt-1">Motivo: <span class="text-blue-300 font-bold">${a.motivo}</span></p>
+                        </div>
+                        ${canDelete ? `
+                            <button onclick="eliminarAusencia(${a.id})" class="text-red-400 hover:text-red-300 text-xs">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    ${a.tiempoAusencia ? `<p class="text-xs text-yellow-300 mt-2">Tiempo fuera: <span class="font-bold">${formatearTiempo(a.tiempoAusencia)}</span></p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function registrarSalidaAusencia() {
+            const empleadoId = parseInt(document.getElementById('empleadoAusencia').value);
+            const motivo = document.getElementById('motivoAusencia').value;
+
+            if (!empleadoId) {
+                showNotification('Selecciona un empleado', 'error');
+                return;
+            }
+            if (!motivo) {
+                showNotification('Ingresa un motivo para la ausencia', 'error');
+                return;
+            }
+
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            const ahora = new Date();
+            const hoy = ahora.toISOString().split('T')[0];
+
+            // Verificar si ya hay una ausencia activa
+            const ausenciaActiva = await db.obtenerAusenciaActiva(empleadoId);
+            if (ausenciaActiva) {
+                showNotification('Ya hay una ausencia activa para este empleado', 'error');
+                return;
+            }
+
+            const ausencia = {
+                empleadoId: empleadoId,
+                empleadoNombre: empleado.nombre,
+                empleadoCedula: empleado.cedula,
+                horaSalida: ahora.toISOString(),
+                horaRegreso: null,
+                tiempoAusencia: null,
+                fecha: hoy,
+                motivo: motivo,
+                departamento: empleado.departamento,
+                fechaCreacion: new Date().toISOString()
+            };
+
+            await db.guardarAusencia(ausencia);
+            
+            // Iniciar contador
+            tiempoInicioAusencia = ahora;
+            iniciarContadorAusencia();
+            
+            const status = document.getElementById('statusAusencia');
+            status.className = 'p-4 rounded-lg text-center font-semibold text-white bg-yellow-500/30 border border-yellow-500';
+            status.innerHTML = `<i class="fas fa-door-open mr-2"></i>✅ Salida registrada - ${empleado.nombre} está fuera del negocio`;
+            status.classList.remove('hidden');
+            
+            document.getElementById('contadorAusencia').classList.remove('hidden');
+            document.getElementById('motivoAusenciaTexto').textContent = `Motivo: ${motivo}`;
+            
+            showNotification(`Salida registrada - ${empleado.nombre} está fuera`, 'success');
+            
+            actualizarAusenciasDelDia(empleadoId);
+        }
+
+        async function registrarRegresoAusencia() {
+            const empleadoId = parseInt(document.getElementById('empleadoAusencia').value);
+
+            if (!empleadoId) {
+                showNotification('Selecciona un empleado', 'error');
+                return;
+            }
+
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            const ahora = new Date();
+
+            // Buscar la ausencia activa
+            const ausenciaActiva = await db.obtenerAusenciaActiva(empleadoId);
+            if (!ausenciaActiva) {
+                showNotification('No hay una ausencia activa para este empleado', 'error');
+                return;
+            }
+
+            // Calcular tiempo de ausencia
+            const tiempoAusencia = calcularTiempoAusencia(ausenciaActiva.horaSalida, ahora.toISOString());
+            
+            ausenciaActiva.horaRegreso = ahora.toISOString();
+            ausenciaActiva.tiempoAusencia = tiempoAusencia;
+
+            await db.actualizarAusencia(ausenciaActiva);
+            
+            // Detener contador
+            detenerContadorAusencia();
+            
+            const status = document.getElementById('statusAusencia');
+            status.className = 'p-4 rounded-lg text-center font-semibold text-white bg-green-500/30 border border-green-500';
+            status.innerHTML = `<i class="fas fa-door-closed mr-2"></i>✅ Regreso registrado - Tiempo fuera: ${formatearTiempo(tiempoAusencia)}`;
+            status.classList.remove('hidden');
+            
+            document.getElementById('contadorAusencia').classList.add('hidden');
+            
+            showNotification(`Regreso registrado - ${empleado.nombre} está de vuelta`, 'success');
+            
+            actualizarAusenciasDelDia(empleadoId);
+        }
+
+        function iniciarContadorAusencia() {
+            detenerContadorAusencia(); // Asegurarse de que no hay otro contador activo
+            
+            contadorInterval = setInterval(() => {
+                const ahora = new Date();
+                const tiempoTranscurrido = (ahora - tiempoInicioAusencia) / 1000; // en segundos
+                
+                const horas = Math.floor(tiempoTranscurrido / 3600);
+                const minutos = Math.floor((tiempoTranscurrido % 3600) / 60);
+                const segundos = Math.floor(tiempoTranscurrido % 60);
+                
+                document.getElementById('tiempoTranscurrido').textContent = 
+                    `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function detenerContadorAusencia() {
+            if (contadorInterval) {
+                clearInterval(contadorInterval);
+                contadorInterval = null;
+            }
+        }
+
+        async function eliminarAusencia(ausenciaId) {
+            if (!checkEditAccess()) return;
+
+            if (confirm('¿Eliminar este registro de ausencia?')) {
+                await db.eliminarAusencia(ausenciaId);
+                const empleadoId = parseInt(document.getElementById('empleadoAusencia').value);
+                actualizarAusenciasDelDia(empleadoId);
+                showNotification('Registro eliminado', 'success');
+            }
+        }
+
+        // ==================== CONTROL DE ACCIONES ====================
+        async function cargarAcciones() {
+            const empleados = await db.obtenerEmpleados();
+            const select = document.getElementById('empleadoAccion');
+            select.innerHTML = '<option value="">-- Selecciona un empleado --</option>' + empleados.filter(e => e.estado === 'activo').map(e => `
+                <option value="${e.id}">${e.nombre} - ${e.cedula}</option>
+            `).join('');
+
+            // Cargar filtros del historial
+            const filtroEmpleado = document.getElementById('historialAccionEmpleado');
+            filtroEmpleado.innerHTML = '<option value="">Todos los empleados</option>' + empleados.filter(e => e.estado === 'activo').map(e => `
+                <option value="${e.id}">${e.nombre}</option>
+            `).join('');
+
+            await actualizarHistorialAcciones();
+        }
+
+        document.getElementById('empleadoAccion').addEventListener('change', async (e) => {
+            const empleadoId = parseInt(e.target.value);
+            if (!empleadoId) {
+                document.getElementById('empleadoInfoAccion').classList.add('hidden');
+                document.getElementById('accionesDelDia').innerHTML = '<p class="text-slate-500 text-center py-4">Selecciona un empleado</p>';
+                return;
+            }
+
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            document.getElementById('infoNombreAccion').textContent = empleado.nombre;
+            document.getElementById('infoTurnoAccion').textContent = empleado.turno;
+            document.getElementById('infoDepartamentoAccion').textContent = empleado.departamento;
+            document.getElementById('infoRolAccion').textContent = empleado.rol;
+            document.getElementById('empleadoInfoAccion').classList.remove('hidden');
+
+            actualizarAccionesDelDia(empleadoId);
+        });
+
+        async function actualizarAccionesDelDia(empleadoId) {
+            const acciones = await db.obtenerAccionesDelDia(empleadoId);
+            const contenedor = document.getElementById('accionesDelDia');
+
+            if (acciones.length === 0) {
+                contenedor.innerHTML = '<p class="text-slate-500 text-center py-4">Sin acciones registradas hoy</p>';
+                return;
+            }
+
+            const canDelete = currentUser.tipo === 'admin';
+
+            contenedor.innerHTML = acciones.map(a => `
+                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-xs text-slate-400">Acción: <span class="text-cyan-400 font-bold">${a.tipo}</span></p>
+                            <p class="text-xs text-slate-400 mt-1">Hora: <span class="text-cyan-300 font-mono font-bold">${formatearHora(a.fechaHora)}</span></p>
+                            ${a.observaciones ? `<p class="text-xs text-slate-400 mt-1">Observaciones: <span class="text-cyan-200">${a.observaciones}</span></p>` : ''}
+                        </div>
+                        ${canDelete ? `
+                            <button onclick="eliminarAccion(${a.id})" class="text-red-400 hover:text-red-300 text-xs">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function registrarAccion() {
+            const empleadoId = parseInt(document.getElementById('empleadoAccion').value);
+            const tipoAccion = document.getElementById('tipoAccion').value;
+            const observaciones = document.getElementById('observacionesAccion').value;
+
+            if (!empleadoId) {
+                showNotification('Selecciona un empleado', 'error');
+                return;
+            }
+            if (!tipoAccion) {
+                showNotification('Selecciona el tipo de acción realizada', 'error');
+                return;
+            }
+
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            const ahora = new Date();
+            const hoy = ahora.toISOString().split('T')[0];
+
+            const accion = {
+                empleadoId: empleadoId,
+                empleadoNombre: empleado.nombre,
+                empleadoCedula: empleado.cedula,
+                tipo: tipoAccion,
+                observaciones: observaciones,
+                fechaHora: ahora.toISOString(),
+                fecha: hoy,
+                departamento: empleado.departamento,
+                fechaCreacion: new Date().toISOString()
+            };
+
+            await db.guardarAccion(accion);
+            
+            const status = document.getElementById('statusAccion');
+            status.className = 'p-4 rounded-lg text-center font-semibold text-white bg-cyan-500/30 border border-cyan-500';
+            status.innerHTML = `<i class="fas fa-check-circle mr-2"></i>✅ Acción registrada - ${empleado.nombre} realizó: ${tipoAccion}`;
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 3000);
+            
+            // Limpiar formulario
+            document.getElementById('tipoAccion').value = '';
+            document.getElementById('observacionesAccion').value = '';
+            
+            showNotification(`Acción registrada - ${empleado.nombre}: ${tipoAccion}`, 'success');
+            
+            actualizarAccionesDelDia(empleadoId);
+            actualizarHistorialAcciones();
+        }
+
+        async function actualizarHistorialAcciones() {
+            const empleadoId = document.getElementById('historialAccionEmpleado').value ? parseInt(document.getElementById('historialAccionEmpleado').value) : null;
+            const tipoAccion = document.getElementById('historialTipoAccion').value;
+            const fecha = document.getElementById('historialFechaAccion').value;
+
+            let acciones = await db.obtenerAcciones();
+
+            if (empleadoId) {
+                acciones = acciones.filter(a => a.empleadoId === empleadoId);
+            }
+
+            if (tipoAccion) {
+                acciones = acciones.filter(a => a.tipo === tipoAccion);
+            }
+
+            if (fecha) {
+                acciones = acciones.filter(a => a.fecha === fecha);
+            }
+
+            acciones.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
+
+            const tabla = document.getElementById('historialAccionesTable');
+
+            if (acciones.length === 0) {
+                tabla.innerHTML = '<tr class="text-slate-500 text-center"><td colspan="5" class="py-8">Sin registros de acciones</td></tr>';
+                return;
+            }
+
+            const canDelete = currentUser.tipo === 'admin';
+
+            tabla.innerHTML = acciones.map(a => `
+                <tr class="table-row hover:bg-slate-800 transition-colors">
+                    <td class="px-4 py-3 font-semibold">${a.empleadoNombre}</td>
+                    <td class="px-4 py-3 text-sm">${formatearFechaHora(a.fechaHora)}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold">${a.tipo}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">${a.observaciones || '-'}</td>
+                    <td class="px-4 py-3">
+                        ${canDelete ? `
+                            <button onclick="eliminarAccion(${a.id})" class="text-red-400 hover:text-red-300 text-sm" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function eliminarAccion(accionId) {
+            if (!checkEditAccess()) return;
+
+            if (confirm('¿Eliminar este registro de acción?')) {
+                await db.eliminarAccion(accionId);
+                const empleadoId = parseInt(document.getElementById('empleadoAccion').value);
+                actualizarAccionesDelDia(empleadoId);
+                actualizarHistorialAcciones();
+                showNotification('Registro eliminado', 'success');
+            }
+        }
+
+        // Event listeners para filtros del historial de acciones
+        document.getElementById('historialAccionEmpleado').addEventListener('change', actualizarHistorialAcciones);
+        document.getElementById('historialTipoAccion').addEventListener('change', actualizarHistorialAcciones);
+        document.getElementById('historialFechaAccion').addEventListener('change', actualizarHistorialAcciones);
+
+        // ==================== HISTORIAL ====================
+        async function cargarHistorial() {
+            if (!checkAdminAccess()) return;
+
+            const empleados = await db.obtenerEmpleados();
+            const filtroEmpleado = document.getElementById('historialEmpleado');
+            filtroEmpleado.innerHTML = '<option value="">Todos los empleados</option>' + empleados.map(e => `
+                <option value="${e.id}">${e.nombre}</option>
+            `).join('');
+
+            await actualizarTablaHistorial();
+        }
+
+        async function actualizarTablaHistorial() {
+            const empleadoId = document.getElementById('historialEmpleado').value ? parseInt(document.getElementById('historialEmpleado').value) : null;
+            const fechaInicio = document.getElementById('historialFechaInicio').value;
+            const fechaFin = document.getElementById('historialFechaFin').value;
+
+            let asistencias = await db.obtenerAsistencias();
+
+            if (empleadoId) {
+                asistencias = asistencias.filter(a => a.empleadoId === empleadoId);
+            }
+
+            if (fechaInicio) {
+                asistencias = asistencias.filter(a => a.fecha >= fechaInicio);
+            }
+
+            if (fechaFin) {
+                asistencias = asistencias.filter(a => a.fecha <= fechaFin);
+            }
+
+            asistencias.sort((a, b) => new Date(b.horaEntrada) - new Date(a.horaEntrada));
+
+            const tabla = document.getElementById('historialTable');
+
+            if (asistencias.length === 0) {
+                tabla.innerHTML = '<tr class="text-slate-500 text-center"><td colspan="8" class="py-8">Sin registros de asistencia</td></tr>';
+                return;
+            }
+
+            const canDelete = currentUser.tipo === 'admin';
+
+            tabla.innerHTML = asistencias.map(a => `
+                <tr class="table-row hover:bg-slate-800 transition-colors">
+                    <td class="px-4 py-3 font-semibold">${a.empleadoNombre}</td>
+                    <td class="px-4 py-3 text-sm">${formatearFecha(a.horaEntrada)}</td>
+                    <td class="px-4 py-3 font-mono text-sm text-green-400 font-bold">${formatearHora(a.horaEntrada)}</td>
+                    <td class="px-4 py-3 font-mono text-sm ${a.horaSalida ? 'text-red-400 font-bold' : 'text-slate-500'}">${a.horaSalida ? formatearHora(a.horaSalida) : '(Pendiente)'}</td>
+                    <td class="px-4 py-3"><span class="px-2 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold">${a.turno}</span></td>
+                    <td class="px-4 py-3 text-sm font-bold">${a.horasTrabajadas ? a.horasTrabajadas + ' h' : '-'}</td>
+                    <td class="px-4 py-3">
+                        ${a.minutosTarde > 0 ? `<span class="badge-warning px-2 py-1 rounded text-xs font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>${a.minutosTarde} min</span>` : '<span class="text-slate-500">-</span>'}
+                    </td>
+                    <td class="px-4 py-3">
+                        ${canDelete ? `
+                            <button onclick="eliminarAsistenciaHistorial(${a.id})" class="text-red-400 hover:text-red-300 text-sm" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function eliminarAsistenciaHistorial(asistenciaId) {
+            if (!checkEditAccess()) return;
+
+            if (confirm('¿Eliminar este registro?')) {
+                await db.eliminarAsistencia(asistenciaId);
+                await actualizarTablaHistorial();
+                actualizarDashboard();
+                showNotification('Registro eliminado', 'success');
+            }
+        }
+
+        document.getElementById('historialEmpleado').addEventListener('change', actualizarTablaHistorial);
+        document.getElementById('historialFechaInicio').addEventListener('change', actualizarTablaHistorial);
+        document.getElementById('historialFechaFin').addEventListener('change', actualizarTablaHistorial);
+
+        // ==================== REPORTES ====================
+        async function cargarReportes() {
+            if (!checkAdminAccess()) return;
+
+            const empleados = await db.obtenerEmpleados();
+            const filtroEmpleado = document.getElementById('reporteEmpleado');
+            filtroEmpleado.innerHTML = '<option value="">Todos los empleados</option>' + empleados.map(e => `
+                <option value="${e.id}">${e.nombre}</option>
+            `).join('');
+
+            // Asignar mes actual
+            const hoy = new Date();
+            document.getElementById('reporteMes').value = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        async function generarReporte() {
+            if (!checkAdminAccess()) return;
+
+            const empleadoId = document.getElementById('reporteEmpleado').value ? parseInt(document.getElementById('reporteEmpleado').value) : null;
+            const mes = document.getElementById('reporteMes').value;
+
+            if (!mes) {
+                showNotification('Selecciona un mes', 'error');
+                return;
+            }
+
+            let asistencias = await db.obtenerAsistencias();
+
+            if (empleadoId) {
+                asistencias = asistencias.filter(a => a.empleadoId === empleadoId);
+            }
+
+            const [anio, mesNum] = mes.split('-').map(Number);
+            asistencias = asistencias.filter(a => {
+                const [aAsistencia, mAsistencia] = a.fecha.split('-').map(Number);
+                return aAsistencia === anio && mAsistencia === mesNum;
+            });
+
+            if (asistencias.length === 0) {
+                document.getElementById('reporteContenido').innerHTML = '<div class="text-center py-8 text-slate-400">Sin datos para generar reporte</div>';
+                return;
+            }
+
+            // Agrupar por empleado
+            const porEmpleado = {};
+            asistencias.forEach(a => {
+                if (!porEmpleado[a.empleadoId]) {
+                    porEmpleado[a.empleadoId] = {
+                        nombre: a.empleadoNombre,
+                        registros: []
+                    };
+                }
+                porEmpleado[a.empleadoId].registros.push(a);
+            });
+
+            let html = '<div class="space-y-6">';
+
+            Object.values(porEmpleado).forEach(empleado => {
+                const registros = empleado.registros;
+                const diasTrabajados = new Set(registros.map(r => r.fecha)).size;
+                const totalHoras = registros.reduce((sum, r) => sum + (r.horasTrabajadas ? parseFloat(r.horasTrabajadas) : 0), 0);
+                const tardanzas = registros.filter(r => r.minutosTarde > 0).length;
+                const totalMinutosTarde = registros.reduce((sum, r) => sum + (r.minutosTarde || 0), 0);
+
+                html += `
+                    <div class="card p-6 rounded-lg border-l-4 border-blue-500">
+                        <h4 class="text-lg font-bold mb-4">${empleado.nombre}</h4>
+                        <div class="grid grid-cols-4 gap-4 mb-6">
+                            <div class="text-center">
+                                <p class="text-slate-400 text-sm">Días Trabajados</p>
+                                <p class="text-2xl font-bold text-green-400 mt-1">${diasTrabajados}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-slate-400 text-sm">Total Horas</p>
+                                <p class="text-2xl font-bold text-blue-400 mt-1">${totalHoras.toFixed(2)} h</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-slate-400 text-sm">Tardanzas</p>
+                                <p class="text-2xl font-bold text-yellow-400 mt-1">${tardanzas}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-slate-400 text-sm">Min Tarde</p>
+                                <p class="text-2xl font-bold text-orange-400 mt-1">${totalMinutosTarde}</p>
+                            </div>
+                        </div>
+                        <div class="text-sm">
+                            <p class="text-slate-400 mb-2 font-semibold">Promedio de horas: ${(totalHoras / diasTrabajados).toFixed(2)} h/día</p>
+                            <p class="text-slate-400">Puntualidad: ${(((diasTrabajados - tardanzas) / diasTrabajados) * 100).toFixed(1)}%</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            document.getElementById('reporteContenido').innerHTML = html;
+        }
+
+        // ==================== DASHBOARD ====================
+        async function actualizarDashboard() {
+            const empleados = await db.obtenerEmpleados();
+            const asistencias = await db.obtenerAsistencias();
+            const hoy = new Date().toISOString().split('T')[0];
+            const asistenciasHoy = asistencias.filter(a => a.fecha === hoy);
+
+            // Estadísticas
+            const presentes = new Set(asistenciasHoy.map(a => a.empleadoId)).size;
+            const ausentes = empleados.filter(e => e.estado === 'activo').length - presentes;
+            const tardanzas = asistenciasHoy.filter(a => a.minutosTarde > 0).length;
+
+            document.getElementById('stat-total-empleados').textContent = empleados.length;
+            document.getElementById('stat-presentes').textContent = presentes;
+            document.getElementById('stat-ausentes').textContent = ausentes;
+            document.getElementById('stat-tardanzas').textContent = tardanzas;
+
+            // Asistencias recientes
+            const asistenciasRecientes = asistenciasHoy.slice(0, 5);
+            const recientesHtml = asistenciasRecientes.length > 0 ? asistenciasRecientes.map(a => `
+                <div class="flex justify-between items-center p-3 bg-slate-800/30 rounded-lg">
+                    <div>
+                        <p class="font-semibold text-sm">${a.empleadoNombre}</p>
+                        <p class="text-xs text-slate-400">Entrada: ${formatearHora(a.horaEntrada)}</p>
+                    </div>
+                    <div class="text-right">
+                        ${a.minutosTarde > 0 ? `<span class="badge-warning px-2 py-1 rounded text-xs">${a.minutosTarde} min tarde</span>` : '<span class="text-green-400 text-xs">✓ Puntual</span>'}
+                    </div>
+                </div>
+            `).join('') : '<p class="text-slate-500 text-center py-4">Sin asistencias hoy</p>';
+
+            document.getElementById('dashboard-asistencias').innerHTML = recientesHtml;
+
+            // Empleados activos
+            const empleadosActivos = empleados.filter(e => e.estado === 'activo').slice(0, 5);
+            const empleadosHtml = empleadosActivos.length > 0 ? empleadosActivos.map(e => `
+                <div class="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        ${e.foto ? `<img src="${e.foto}" alt="${e.nombre}" class="w-8 h-8 rounded-full">` : `<div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs"><i class="fas fa-user text-blue-400"></i></div>`}
+                        <div>
+                            <p class="font-semibold text-sm">${e.nombre}</p>
+                            <p class="text-xs text-slate-400">${e.departamento}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs badge-success px-2 py-1 rounded">${e.rol}</span>
+                </div>
+            `).join('') : '<p class="text-slate-500 text-center py-4">Sin empleados</p>';
+
+            document.getElementById('dashboard-empleados').innerHTML = empleadosHtml;
+        }
+
+        // ==================== NOTIFICACIONES ====================
+        function showNotification(mensaje, tipo = 'info') {
+            const notificacion = document.createElement('div');
+            notificacion.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white font-semibold z-50 animate-pulse ${
+                tipo === 'success' ? 'bg-green-500/80 border border-green-400' :
+                tipo === 'error' ? 'bg-red-500/80 border border-red-400' :
+                'bg-blue-500/80 border border-blue-400'
+            }`;
+            notificacion.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas ${
+                        tipo === 'success' ? 'fa-check-circle' :
+                        tipo === 'error' ? 'fa-exclamation-circle' :
+                        'fa-info-circle'
+                    }"></i>
+                    ${mensaje}
+                </div>
+            `;
+            document.body.appendChild(notificacion);
+            setTimeout(() => notificacion.remove(), 3000);
+        }
+
+        // ==================== INICIALIZACIÓN ====================
+        window.addEventListener('load', async () => {
+            await db.init();
+            // Enfocar el primer campo del PIN al cargar
+            document.getElementById('pin1').focus();
+        });
+    </script>
+</body>
+</html>
