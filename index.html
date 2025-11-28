@@ -1423,6 +1423,80 @@
             openModal('modalPerfil');
         }
 
+        async function editarEmpleado(empleadoId) {
+            if (!checkEditAccess()) return;
+            
+            const empleado = await db.obtenerEmpleado(empleadoId);
+            
+            // Llenar el formulario con los datos del empleado
+            document.getElementById('empleadoNombre').value = empleado.nombre;
+            document.getElementById('empleadoCedula').value = empleado.cedula;
+            document.getElementById('empleadoCorreo').value = empleado.correo;
+            document.getElementById('empleadoTelefono').value = empleado.telefono;
+            document.getElementById('empleadoRol').value = empleado.rol;
+            document.getElementById('empleadoDepartamento').value = empleado.departamento;
+            
+            const [entrada, salida] = empleado.turno.split('-');
+            document.getElementById('turnoEntrada').value = entrada;
+            document.getElementById('turnoSalida').value = salida;
+            
+            document.getElementById('empleadoFechaIngreso').value = empleado.fechaIngreso;
+            document.getElementById('empleadoCodigo').value = empleado.codigo;
+            
+            if (empleado.foto) {
+                document.getElementById('previewImg').src = empleado.foto;
+                document.getElementById('fotoPreview').classList.remove('hidden');
+            }
+            
+            // Cambiar el comportamiento del formulario para actualizar
+            const form = document.getElementById('formEmpleado');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                
+                const foto = await new Promise((resolve) => {
+                    const fileInput = document.getElementById('empleadoFoto');
+                    if (fileInput.files.length > 0) {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(fileInput.files[0]);
+                    } else {
+                        resolve(empleado.foto);
+                    }
+                });
+                
+                const entrada = document.getElementById('turnoEntrada').value;
+                const salida = document.getElementById('turnoSalida').value;
+                const turno = `${entrada}-${salida}`;
+                
+                empleado.nombre = document.getElementById('empleadoNombre').value;
+                empleado.cedula = document.getElementById('empleadoCedula').value;
+                empleado.correo = document.getElementById('empleadoCorreo').value;
+                empleado.telefono = document.getElementById('empleadoTelefono').value;
+                empleado.rol = document.getElementById('empleadoRol').value;
+                empleado.departamento = document.getElementById('empleadoDepartamento').value;
+                empleado.turno = turno;
+                empleado.fechaIngreso = document.getElementById('empleadoFechaIngreso').value;
+                empleado.foto = foto;
+                
+                await db.actualizarEmpleado(empleado);
+                closeModal('modalEmpleado');
+                form.reset();
+                document.getElementById('fotoPreview').classList.add('hidden');
+                cargarEmpleados();
+                actualizarDashboard();
+                cargarAsistencia();
+                cargarAusencias();
+                cargarAcciones();
+                showNotification('Empleado actualizado exitosamente', 'success');
+                
+                // Restaurar el comportamiento original del formulario
+                form.onsubmit = null;
+                form.addEventListener('submit', arguments.callee);
+            };
+            
+            openModal('modalEmpleado');
+        }
+
         async function cambiarEstado(empleadoId) {
             if (!checkEditAccess()) return;
 
